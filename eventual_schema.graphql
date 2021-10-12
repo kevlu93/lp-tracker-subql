@@ -1,0 +1,34 @@
+type AccountLiquidityPoolSummary @entity {
+  id: ID!
+  pool: Pool! 
+  totalInPool: BigInt!
+  liquidityEvents: [lpEvent] @derivedFrom(field: "account")
+}
+
+type  lpEvent @entity {
+  id: ID!
+  account: AccountLiquidityPoolSummary
+  date: Date
+  pool: Pool
+  type: String
+  balanceChanges: [lpBalance] @derivedFrom(field: "event")
+}
+
+type lpBalance @entity {
+  id: ID!
+  event: lpEvent 
+  token0: String
+  token0Amount: BigInt
+  token1: String
+  token1Amount: BigInt
+  pool: Pool 
+  shareTokenAmount: BigInt
+}
+
+type Pool @entity {
+  id: ID! 
+  type: String!
+  token0Amount: BigInt!
+  token1Amount: BigInt!
+  shareTokenAmount: BigInt!
+}

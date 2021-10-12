@@ -1,0 +1,20 @@
+type Pool @entity {
+  id: ID! 
+  account: Account!
+  type: String!
+  token0Amount: BigInt!
+  token1Amount: BigInt!
+  shareTokenAmount: BigInt!
+}
+
+type PoolSummary @entity {
+  id: ID!
+  token0Total: BigInt!
+  token1Total: BigInt!
+  shareTokenTotal: BigInt!
+}
+
+type Account @entity {
+  id: ID!
+  pools: [Pool] @derivedFrom(field: "account") 
+}
