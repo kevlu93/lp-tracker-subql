@@ -4,6 +4,7 @@ repository: ''
 schema: ./schema.graphql
 network:
   endpoint: wss://acala-mandala.api.onfinality.io/public-ws
+  dictionary: https://api.subquery.network/sq/AcalaNetwork/mandala-dictionary
   typesAlias: &ref_57
     stakingPool:
       Phase: StakingPoolPhase

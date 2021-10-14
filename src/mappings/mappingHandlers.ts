@@ -1,6 +1,6 @@
 import { SubstrateEvent } from "@subql/types";
 import { Codec } from "@polkadot/types/types";
-import { Account, Pool, PoolSummary} from "../types/models";
+import { Account, Pool, PoolTransaction, PoolSummary} from "../types/models";
 
 function getToken(currencyId: Codec): string {
   const currencyJson = JSON.parse(currencyId.toString());
@@ -29,9 +29,17 @@ function createPool(poolType: string, accountId: string) {
   return entity;
 }
 
+function createPoolTransaction(poolId: string, id: string) {
+  const entity = new  PoolTransaction(id);
+  entity.token0Amount = BigInt(0);
+  entity.token1Amount = BigInt(0);
+  entity.shareTokenAmount = BigInt(0);
+  entity.runningShareTokenAmount = BigInt(0);
+  return entity;
+}
+
 function createPoolSummary(poolType: string) {
   const entity = new PoolSummary(poolType);
-  entity.type = poolType;
   entity.token0Total =  BigInt(0);
   entity.token1Total = BigInt(0);
   entity.shareTokenTotal = BigInt(0);
@@ -40,8 +48,7 @@ function createPoolSummary(poolType: string) {
 
 export async function handleLiquidityPoolEvent(event: SubstrateEvent): Promise<void> {
   //ignore event if it is not adding or removing liquidity to a pool
-  if (event.event.section != "dex" || 
-      (event.event.method != "AddLiquidity" && 
+  if (event.event.section != "dex" || (event.event.method != "AddLiquidity" && 
       event.event.method != "RemoveLiquidity")) {
     return;
   }
@@ -60,7 +67,7 @@ export async function handleLiquidityPoolEvent(event: SubstrateEvent): Promise<v
   }
   //create the pool if necessary
   const poolType = getToken(pool0currency) + "|" + getToken(pool1currency);
-  let poolEntity = await Pool.get(poolType + "|" + accountId.toString());
+  let poolEntity = await Pool.get(accountId.toString() + "|" + poolType);
   if (poolEntity == undefined) {
     poolEntity = createPool(poolType, accountId.toString());
     await poolEntity.save();
@@ -71,6 +78,13 @@ export async function handleLiquidityPoolEvent(event: SubstrateEvent): Promise<v
     poolSummaryEntity = createPoolSummary(poolType);
     await poolSummaryEntity.save();
   }
+  
+  //create the pool transaction event
+  const poolTx = createPoolTransaction(
+    accountId.toString() + '|' + poolType,
+    `${event.block.block.header.number.toNumber()}-${event.idx}`,
+  )
+  
 
   //if event was removing liquidity, set amounts to negative
   let pool0Amount = BigInt(pool0Amt.toString()); 
@@ -82,10 +96,19 @@ export async function handleLiquidityPoolEvent(event: SubstrateEvent): Promise<v
     shareTokenAmount = shareTokenAmount * BigInt(-1);
   }
 
+  
+  //update the pool transaction
+  poolTx.token0Amount = pool0Amount;
+  poolTx.token1Amount = pool1Amount;
+  poolTx.shareTokenAmount = shareTokenAmount;
+  
+
   //update the account pool
   poolEntity.token0Amount += BigInt(pool0Amount.toString());
   poolEntity.token1Amount += BigInt(pool1Amount.toString());
   poolEntity.shareTokenAmount += BigInt(shareTokenAmount.toString());
+  poolTx.runningShareTokenAmount = poolEntity.shareTokenAmount;
+  await poolTx.save();
   await poolEntity.save();
 
   //update the total pool summary

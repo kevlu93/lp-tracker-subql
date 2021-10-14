@@ -14,6 +14,14 @@ type  lpEvent @entity {
   balanceChanges: [lpBalance] @derivedFrom(field: "event")
 }
 
+type PoolTransaction @entity {
+  id: ID!
+  token0Amount: BigInt!
+  token1Amount: BigInt!
+  shareTokenAmount: BigInt!
+  runningShareTokenAmount: BigInt!
+}
+
 type lpBalance @entity {
   id: ID!
   event: lpEvent 

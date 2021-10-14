@@ -7,6 +7,14 @@ type Pool @entity {
   shareTokenAmount: BigInt!
 }
 
+type PoolTransaction @entity {
+  id: ID!
+  token0Amount: BigInt!
+  token1Amount: BigInt!
+  shareTokenAmount: BigInt!
+  runningShareTokenAmount: BigInt!
+}
+
 type PoolSummary @entity {
   id: ID!
   token0Total: BigInt!
@@ -18,3 +26,4 @@ type Account @entity {
   id: ID!
   pools: [Pool] @derivedFrom(field: "account") 
 }
+
